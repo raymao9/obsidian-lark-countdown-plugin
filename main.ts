@@ -30,7 +30,6 @@ const COLOR_PRESETS = [
   "#98A2B3"
 ];
 
-const DYNAMIC_STYLE_ELEMENT_ID = "obsidian-countdown-dynamic-styles";
 const COUNTDOWN_CONTAINER_CLASS = "obsidian-countdown__container";
 const COLOR_OPTION_CLASS = "obsidian-countdown__color-option";
 
@@ -211,7 +210,7 @@ export default class CountdownTimerPlugin extends Plugin {
       initialTarget: defaultTarget,
       initialLabel: this.getDefaultLabel(strings),
       initialColor: this.settings.defaultColor,
-      onSubmit: async ({ target, label, color }) => {
+      onSubmit: ({ target, label, color }) => {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (!view) {
           new Notice(strings.openMarkdownWarning);
@@ -475,19 +474,18 @@ class CountdownView extends MarkdownRenderChild {
         option.setAttr("type", "button");
         const presetColor = normaliseColor(hex);
         const labelColor = presetColor ?? hex;
+        const optionColor = normaliseColor(labelColor) ?? labelColor;
         option.setAttribute("aria-label", labelColor);
-        if (presetColor) {
-          option.dataset.countdownColor = presetColor;
-          ensureColorOptionStyle(presetColor);
-        }
-        if (colorsEqual(labelColor, this.color)) {
+        option.dataset.countdownColor = optionColor;
+        option.style.setProperty("--countdown-option-color", optionColor);
+        if (colorsEqual(optionColor, this.color)) {
           option.addClass("is-selected");
         }
         option.addEventListener("mousedown", (evt) => evt.stopPropagation());
         option.onclick = async (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
-          await this.setColor(labelColor);
+          await this.setColor(optionColor);
           this.closeColorPopover();
         };
       });
@@ -502,8 +500,8 @@ class CountdownView extends MarkdownRenderChild {
         }
       });
 
-      this.registerDomEvent(window, "keydown", (event) => {
-        if ((event as KeyboardEvent).key === "Escape") {
+      this.registerDomEvent(window, "keydown", (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
           this.closeColorPopover();
         }
       });
@@ -569,7 +567,8 @@ class CountdownView extends MarkdownRenderChild {
     options.forEach((option) => {
       const hex = normaliseColor(option.dataset.countdownColor) ?? "";
       if (hex) {
-        ensureColorOptionStyle(hex);
+        option.dataset.countdownColor = hex;
+        option.style.setProperty("--countdown-option-color", hex);
       }
       if (colorsEqual(hex, this.color)) {
         option.addClass("is-selected");
@@ -605,11 +604,11 @@ class CountdownView extends MarkdownRenderChild {
     if (!normalised) {
       return;
     }
-    ensureContainerColorStyle(normalised);
+    this.containerEl.style.setProperty("--countdown-color", normalised);
     this.containerEl.setAttribute("data-countdown-color", normalised);
   }
 
-  private async openEditModal() {
+  private openEditModal() {
     if (!this.context) {
       return;
     }
@@ -673,7 +672,7 @@ class CountdownSettingTab extends PluginSettingTab {
     const strings = this.plugin.getStrings();
 
     containerEl.empty();
-    containerEl.createEl("h2", { text: strings.settingsHeader });
+    new Setting(containerEl).setName(strings.settingsHeader).setHeading();
 
     new Setting(containerEl)
       .setName(strings.settingsDefaultLabel)
@@ -752,73 +751,6 @@ function normaliseColor(input: string | undefined): string | null {
 
 function colorsEqual(a: string, b: string) {
   return normaliseColor(a) === normaliseColor(b);
-}
-
-let dynamicStyleElement: HTMLStyleElement | null = null;
-const dynamicColorRules = new Set<string>();
-
-function ensureDynamicStyleElement(): HTMLStyleElement | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  if (dynamicStyleElement && dynamicStyleElement.isConnected) {
-    return dynamicStyleElement;
-  }
-
-  dynamicStyleElement = document.head.querySelector<HTMLStyleElement>(`#${DYNAMIC_STYLE_ELEMENT_ID}`);
-  if (!dynamicStyleElement) {
-    dynamicStyleElement = document.createElement("style");
-    dynamicStyleElement.id = DYNAMIC_STYLE_ELEMENT_ID;
-    document.head.appendChild(dynamicStyleElement);
-  }
-
-  return dynamicStyleElement;
-}
-
-function ensureContainerColorStyle(color: string) {
-  const normalised = normaliseColor(color);
-  if (!normalised) {
-    return;
-  }
-
-  const styleEl = ensureDynamicStyleElement();
-  if (!styleEl) {
-    return;
-  }
-
-  const key = `container:${normalised}`;
-  if (dynamicColorRules.has(key)) {
-    return;
-  }
-
-  const selector = `.${COUNTDOWN_CONTAINER_CLASS}[data-countdown-color="${normalised}"]`;
-  styleEl.appendChild(document.createTextNode(`${selector}{--countdown-color:${normalised};}`));
-  dynamicColorRules.add(key);
-}
-
-function ensureColorOptionStyle(color: string) {
-  const normalised = normaliseColor(color);
-  if (!normalised) {
-    return;
-  }
-
-  const styleEl = ensureDynamicStyleElement();
-  if (!styleEl) {
-    return;
-  }
-
-  const key = `option:${normalised}`;
-  if (dynamicColorRules.has(key)) {
-    return;
-  }
-
-  styleEl.appendChild(
-    document.createTextNode(
-      `.${COLOR_OPTION_CLASS}[data-countdown-color="${normalised}"]{--countdown-option-color:${normalised};}`
-    )
-  );
-  dynamicColorRules.add(key);
 }
 
 function parseTargetDate(input: string | undefined): Date | null {
