@@ -3,7 +3,7 @@
   "name": "Lark Style CountDown Timer",
   "version": "0.1.1",
   "minAppVersion": "1.8.0",
-  "description": "Bring Feishu/Lark-style countdown blocks to Obsidian.",
+  "description": "Create Feishu/Lark-style countdown blocks.",
   "author": "Zhaoyang Yu",
   "authorUrl": "https://zhaoyangyu.com/",
   "isDesktopOnly": false
