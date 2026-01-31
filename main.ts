@@ -631,30 +631,32 @@ class CountdownView extends MarkdownRenderChild {
       }
     }).open();
   }
-
+  
   private tick() {
     const now = Date.now();
-    const diffMs = this.target.getTime() - now;
-    const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+    const diffMs = this.target.getTime() - now;  // 原本差距
+    const totalSeconds = Math.floor(Math.abs(diffMs) / 1000); // 取絕對值
 
     const days = Math.floor(totalSeconds / 86400);
     const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
+    // 更新數字顯示
     this.valueEls.days.setText(pad(days));
     this.valueEls.hours.setText(pad(hours));
     this.valueEls.minutes.setText(pad(minutes));
     this.valueEls.seconds.setText(pad(seconds));
 
-    if (diffMs <= 0) {
-      this.containerEl.addClass("obsidian-countdown__expired");
-      if (this.intervalId) {
-        window.clearInterval(this.intervalId);
-        this.intervalId = null;
-      }
+    // 更新標籤
+    if (diffMs < 0) {
+        // 已經過去的時間
+        this.labelEl?.setText(`${this.label}（已經過了）`);
+        this.containerEl.addClass("obsidian-countdown__expired");
     } else {
-      this.containerEl.removeClass("obsidian-countdown__expired");
+        // 還沒到的時間
+        this.labelEl?.setText(this.label);
+        this.containerEl.removeClass("obsidian-countdown__expired");
     }
   }
 }
