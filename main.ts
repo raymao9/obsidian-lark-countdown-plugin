@@ -649,15 +649,7 @@ class CountdownView extends MarkdownRenderChild {
     this.valueEls.seconds.setText(pad(seconds));
 
     // 更新標籤
-    if (diffMs < 0) {
-        // 已經過去的時間
-        this.labelEl?.setText(`${this.label}（已經過了）`);
-        this.containerEl.addClass("obsidian-countdown__expired");
-    } else {
-        // 還沒到的時間
-        this.labelEl?.setText(this.label);
-        this.containerEl.removeClass("obsidian-countdown__expired");
-    }
+    this.labelEl?.setText(this.label);
   }
 }
 
