@@ -1,7 +1,7 @@
 {
   "id": "lark-style-countdown-timer",
   "name": "Lark Style CountDown Timer",
-  "version": "0.1.1",
+  "version": "0.1.1.1",
   "minAppVersion": "1.8.0",
   "description": "Create Feishu/Lark-style countdown blocks.",
   "author": "Zhaoyang Yu",
